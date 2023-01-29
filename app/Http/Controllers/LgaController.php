@@ -36,46 +36,56 @@ class LgaController extends Controller
         return view('results_form', ['parties' => $parties]);
     }
     public function store_results_post() {
-        $isPollExisting = Polling_unit::where('polling_unit_id', '=', request('polling_unit_id'))->first();
-        if($isPollExisting) {
-            $isPollResult = Announced_pu_result::where('polling_unit_uniqueid', '=', $isPollExisting->uniqueid)->where('party_abbreviation', '=', request('party_abbreviation'))->first();
-            if(!$isPollResult) {
+        try{
+            $isPollExisting = Polling_unit::where('polling_unit_id', '=', request('polling_unit_id'))->first();
+            if($isPollExisting) {
+                $isPollResult = Announced_pu_result::where('polling_unit_uniqueid', '=', $isPollExisting->uniqueid)->where('party_abbreviation', '=', request('party_abbreviation'))->first();
+                if(!$isPollResult) {
+                    $newPollResult = new Announced_pu_result();
+                    $newPollResult->polling_unit_uniqueid = $isPollExisting->uniqueid;
+                    $newPollResult->party_abbreviation = request('party_abbreviation');
+                    $newPollResult->party_score = request('party_score');
+                    $newPollResult->entered_by_user = request('entered_by_user');
+                    $newPollResult->date_entered = date("Y-m-d H:i:s");
+                    $newPollResult->user_ip_address = request('user_ip_address');
+                    $newPollResult->save();
+                    return redirect('/')->with('mssg', 'Poll result saved');
+                } else {
+                    return redirect('/')->with('mssg', 'Nothing saved!!');
+                }
+            } else {
+                $newPollingUnit = new Polling_unit();
                 $newPollResult = new Announced_pu_result();
-                $newPollResult->polling_unit_uniqueid = $isPollExisting->uniqueid;
-                $newPollResult->party_abbreviation = request('party_abbreviation');
-                $newPollResult->party_score = request('party_score');
-                $newPollResult->entered_by_user = request('entered_by_user');
-                $newPollResult->date_entered = date("Y-m-d H:i:s");
-                $newPollResult->user_ip_address = request('user_ip_address');
-                $newPollResult->save();
-                return redirect('/')->with('mssg', 'Poll result saved');
+
+                $newPollingUnit->polling_unit_name = request('polling_unit_name');
+                $newPollingUnit->polling_unit_description = request('polling_unit_description');
+                $newPollingUnit->polling_unit_number = request('polling_unit_number');
+                $newPollingUnit->polling_unit_id = request('polling_unit_id');
+                $newPollingUnit->ward_id = request('ward_id');
+                $newPollingUnit->lga_id = request('lga_id');
+                $newPollingUnit->uniquewardid = request('uniquewardid');
+                $newPollingUnit->lat = request('lat');
+                $newPollingUnit->long = request('long');
+                $newPollingUnit->entered_by_user = request('entered_by_user');
+                $newPollingUnit->date_entered = date("Y-m-d H:i:s");
+                $newPollingUnit->user_ip_address = request('user_ip_address');
+                if($newPollingUnit->save()){      
+
+                    $newPollResult->polling_unit_uniqueid = $newPollingUnit->id;
+                    $newPollResult->party_abbreviation = request('party_abbreviation');
+                    $newPollResult->party_score = request('party_score');
+                    $newPollResult->entered_by_user = request('entered_by_user');
+                    $newPollResult->date_entered = date("Y-m-d H:i:s");
+                    $newPollResult->user_ip_address = request('user_ip_address');
+                    $newPollResult->save();
+                    return redirect('/')->with('mssg', 'Polling Unit and Poll result saved');
+                } else {
+                    return redirect('/')->with('mssg', 'Nothing saved!!');
+                }
+                
             }
-        } else {
-            $newPollingUnit = new Polling_unit();
-            $newPollResult = new Announced_pu_result();
-
-            $newPollingUnit->polling_unit_name = request('polling_unit_name');
-            $newPollingUnit->polling_unit_description = request('polling_unit_description');
-            $newPollingUnit->polling_unit_number = request('polling_unit_number');
-            $newPollingUnit->polling_unit_id = request('polling_unit_id');
-            $newPollingUnit->ward_id = request('ward_id');
-            $newPollingUnit->lga_id = request('lga_id');
-            $newPollingUnit->uniquewardid = request('uniquewardid');
-            $newPollingUnit->lat = request('lat');
-            $newPollingUnit->long = request('long');
-            $newPollingUnit->entered_by_user = request('entered_by_user');
-            $newPollingUnit->date_entered = date("Y-m-d H:i:s");
-            $newPollingUnit->user_ip_address = request('user_ip_address');
-            $newPollingUnit->save();           
-
-            $newPollResult->polling_unit_uniqueid = $newPollingUnit->uniqueid;
-            $newPollResult->party_abbreviation = request('party_abbreviation');
-            $newPollResult->party_score = request('party_score');
-            $newPollResult->entered_by_user = request('entered_by_user');
-            $newPollResult->date_entered = date("Y-m-d h:i:sa");
-            $newPollResult->user_ip_address = null;
-            $newPollResult->save();
-            return redirect('/')->with('mssg', 'Polling Unit and Poll result saved');
+        } catch(\Exception $e) {
+            return redirect('/');
         }
     }
 }   
